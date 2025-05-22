@@ -23,6 +23,7 @@ import {
   Review,
   Banner,
   Blog,
+  SubCategory,
 } from "../pages/admin";
 import { LOCAL_APP } from "../utils/constant";
 import { logout } from "../apis/user/user";
@@ -67,8 +68,26 @@ const AdminRouter = () => {
     },
     {
       key: "category-management",
-      label: <Link to="/category-management">Quản lý danh mục</Link>,
+      label: "Quản lý danh mục",
       icon: <Tags size={15} />,
+      children: [
+        {
+          key: "product-category",
+          label: (
+            <Link to="/category-management/product-category">
+              Danh mục sản phẩm
+            </Link>
+          ),
+        },
+        {
+          key: "product-subcategory",
+          label: (
+            <Link to="/category-management/product-subcategory">
+              Danh mục con
+            </Link>
+          ),
+        },
+      ],
     },
     {
       key: "product-management",
@@ -214,7 +233,14 @@ const AdminRouter = () => {
           <Routes>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/user-management" element={<UserPage />} />
-            <Route path="/category-management" element={<Category />} />
+            <Route
+              path="/category-management/product-category"
+              element={<Category />}
+            />
+            <Route
+              path="/category-management/product-subcategory"
+              element={<SubCategory />}
+            />
             <Route
               path="/product-management/product-list"
               element={<Product />}

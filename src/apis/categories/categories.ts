@@ -5,6 +5,7 @@ import axios from "../apiConfig";
 export interface CategoryApiType {
   getAllCategories: () => Promise<AxiosResponse>;
   addNewCategory: (data: CategoryType) => Promise<AxiosResponse>;
+  updateCategory: (id: string, data: CategoryType) => Promise<AxiosResponse>;
   deleteCategory: (id: string) => Promise<AxiosResponse>;
 }
 
@@ -31,6 +32,15 @@ CategoryApi.deleteCategory = async (id: string) => {
   const res = await axios({
     method: "PUT",
     url: `/categories/change-status/${id}`,
+  });
+  return res;
+};
+
+CategoryApi.updateCategory = async (id: string, data: CategoryType) => {
+  const res = await axios({
+    method: "PUT",
+    url: `/categories/${id}`,
+    data,
   });
   return res;
 };

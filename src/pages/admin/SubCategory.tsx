@@ -1,31 +1,31 @@
 import { useEffect, useState } from "react";
-import { CategoryApi } from "../../apis/categories/categories";
-import type { CategoryType } from "../../types/categories";
+import type { SubCategoryType } from "../../types/subCategories";
 import {
   Button,
   Form,
-  Image,
   Input,
   message,
   Popconfirm,
+  Select,
   Space,
   Table,
   Typography,
   type TableColumnsType,
 } from "antd";
+import { CustomModal } from "../../components";
+import { CategoryApi } from "../../apis/categories/categories";
+import type { CategoryType } from "../../types/categories";
+import { SubCategoryApi } from "../../apis/subCategories/subCategories";
+import type { CustomAxiosError } from "../../types/axios";
 import { formatDate } from "../../utils/helper";
 import { Pencil, Trash } from "lucide-react";
-import { Link } from "react-router-dom";
-import noImage from "../../assets/no-image.jpg";
-import type { CustomAxiosError } from "../../types/axios";
-import { CustomModal, FileUpload } from "../../components";
 
 const { Title } = Typography;
 
 const formItemLayout = {
   labelCol: {
     xs: { span: 24 },
-    sm: { span: 6 },
+    sm: { span: 8 },
   },
   wrapperCol: {
     xs: { span: 24 },
@@ -33,17 +33,30 @@ const formItemLayout = {
   },
 };
 
-const Category = () => {
+const SubCategory = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [categories, setCategories] = useState<CategoryType[] | []>([]);
-  const [updateCategory, setUpdateCategory] = useState<CategoryType | null>(
-    null
+  const [subCategories, setSubCategories] = useState<SubCategoryType[] | []>(
+    []
   );
-  // const [fileList, setFileList] = useState<UploadFile[]>([]);
+  const [updateSubCategories, setUpdateSubCategories] =
+    useState<SubCategoryType | null>(null);
+  const [categories, setCategories] = useState<CategoryType[] | []>([]);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [messageApi, contextHolder] = message.useMessage();
-
   const [form] = Form.useForm();
+
+  const fetchListSubCategories = async () => {
+    setIsLoading(true);
+    try {
+      const res = await SubCategoryApi.getAll();
+      setSubCategories(res.data.data);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (error) {
+      setSubCategories([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const fetchListCategories = async () => {
     setIsLoading(true);
@@ -59,42 +72,34 @@ const Category = () => {
   };
 
   useEffect(() => {
+    fetchListSubCategories();
+  }, []);
+
+  useEffect(() => {
     fetchListCategories();
   }, []);
 
   useEffect(() => {
-    if (updateCategory) {
-      form.setFieldsValue(updateCategory);
+    if (updateSubCategories) {
+      form.setFieldsValue(updateSubCategories);
+      if (typeof updateSubCategories.category == "object")
+        form.setFieldValue("category", updateSubCategories.category._id);
     } else {
       form.resetFields();
     }
-  }, [form, updateCategory]);
+  }, [form, updateSubCategories]);
 
-  const columns: TableColumnsType<CategoryType> = [
+  const columns: TableColumnsType<SubCategoryType> = [
     {
       title: "Tên danh mục",
-      dataIndex: "categoryName",
+      dataIndex: "subCategoryName",
     },
     {
-      title: "Hình ảnh",
-      dataIndex: "image",
-      render: (value) => {
-        if (value && value !== "") {
-          return <Image width={50} src={value} />;
-        } else {
-          return <Image width={50} src={noImage} />;
-        }
-      },
-    },
-    {
-      title: "Mô tả",
-      dataIndex: "description",
-      render: (value) => {
-        if (value && value !== "") {
-          return <p className="w-[250px]">{value}</p>;
-        } else {
-          return <p>Chưa có mô tả</p>;
-        }
+      title: "Danh mục chính",
+      dataIndex: "category",
+      render: (category: CategoryType) => {
+        const { categoryName } = category;
+        return <p>{categoryName}</p>;
       },
     },
     {
@@ -118,21 +123,21 @@ const Category = () => {
     {
       title: "Người tạo",
       dataIndex: "createdBy",
-      render: (value) => {
-        return <Link to={"/"}>{value.email}</Link>;
+      render: (user) => {
+        return <p>{user.email}</p>;
       },
     },
     {
       title: "Thao tác",
       align: "center",
-      render: (value: CategoryType) => {
+      render: (value: SubCategoryType) => {
         const { _id } = value;
-
         return (
           <Space>
             <Button
               onClick={() => {
-                setUpdateCategory(value);
+                // setUpdateCategory(value);
+                setUpdateSubCategories(value);
                 showModal();
               }}
             >
@@ -140,9 +145,9 @@ const Category = () => {
             </Button>
             <Popconfirm
               placement="topLeft"
-              title="Xoá danh mục"
+              title="Xoá danh mục con"
               description="Bạn chắc chắn muốn xoá chứ ?"
-              onConfirm={() => handleDelete(_id)}
+              //   onConfirm={() => handleDelete(_id)}
               // onCancel={cancel}
               okText="Xác nhận"
               cancelText="Huỷ"
@@ -161,35 +166,21 @@ const Category = () => {
     setIsModalOpen(true);
   };
 
-  const handleDelete = async (id: string) => {
+  const handleSubmit = async (values: SubCategoryType) => {
     setIsLoading(true);
     try {
-      await CategoryApi.deleteCategory(id);
-      messageApi.success("Xoá danh mục thành công");
-      fetchListCategories();
-    } catch (error) {
-      const err = error as CustomAxiosError;
-      messageApi.error(err.response.data.msg);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleSubmit = async (values: CategoryType) => {
-    setIsLoading(true);
-    try {
-      if (updateCategory) {
-        const { _id } = updateCategory;
-        await CategoryApi.updateCategory(_id, values);
-        messageApi.success("Cập nhật danh mục thành công");
+      if (updateSubCategories) {
+        const { _id } = updateSubCategories;
+        await SubCategoryApi.update(_id, values);
+        messageApi.success("Thêm danh mục con thành công");
       } else {
-        await CategoryApi.addNewCategory(values);
-        messageApi.success("Thêm danh mục thành công");
+        await SubCategoryApi.create(values);
+        messageApi.success("Chỉnh sửa danh mục con thành công");
         form.resetFields();
       }
       setIsModalOpen(false);
-      fetchListCategories();
-    } catch (error: unknown) {
+      fetchListSubCategories();
+    } catch (error) {
       const err = error as CustomAxiosError;
       messageApi.error(err.response.data.msg);
     } finally {
@@ -202,55 +193,58 @@ const Category = () => {
       {contextHolder}
       <div className="flex justify-between items-center mb-3">
         <Title level={5} style={{ textTransform: "uppercase" }}>
-          Danh sách danh mục
+          Danh sách danh mục con
         </Title>
         <Button
           type="primary"
           onClick={() => {
-            setUpdateCategory(null);
+            setUpdateSubCategories(null);
             showModal();
           }}
         >
-          Thêm danh mục
+          Thêm danh mục con
         </Button>
       </div>
-      <Table<CategoryType>
+      <Table<SubCategoryType>
         loading={isLoading}
         rowKey={"_id"}
         columns={columns}
-        dataSource={categories}
+        dataSource={subCategories}
       />
       <CustomModal
-        title="Thêm danh mục"
+        title="Thêm danh mục con"
         visible={isModalOpen}
         setIsVisible={setIsModalOpen}
       >
-        <Form
-          {...formItemLayout}
-          form={form}
-          onFinish={handleSubmit}
-          initialValues={{ image: "" }}
-        >
+        <Form onFinish={handleSubmit} {...formItemLayout} form={form}>
           <Form.Item
-            label="Tên danh mục"
-            name="categoryName"
+            label="Tên danh mục con"
+            name="subCategoryName"
             rules={[{ required: true, message: "Vui lòng không bỏ trống!" }]}
           >
-            <Input placeholder="Nhập tên danh mục" />
+            <Input placeholder="Nhập tên danh mục con" />
           </Form.Item>
           <Form.Item
-            label="Mô tả"
-            name="description"
+            label="Danh mục"
+            name="category"
             rules={[{ required: true, message: "Vui lòng không bỏ trống!" }]}
           >
-            <Input.TextArea placeholder="Nhập vào nội dung..." />
+            <Select
+              showSearch
+              placeholder="Chọn danh mục"
+              optionFilterProp="label"
+              options={categories.map((category) => {
+                const { _id, categoryName } = category;
+                return {
+                  value: _id,
+                  label: categoryName,
+                };
+              })}
+            />
           </Form.Item>
-          <Form.Item label="Hình ảnh" name="image">
-            <FileUpload form={form} image={updateCategory?.image} />
-          </Form.Item>
-          <Form.Item wrapperCol={{ offset: 6, span: 16 }}>
+          <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
             <Button type="primary" loading={isLoading} htmlType="submit">
-              {updateCategory ? "Chỉnh sửa" : "Thêm ngay"}
+              {updateSubCategories ? "Chỉnh sửa" : "Thêm ngay"}
             </Button>
           </Form.Item>
         </Form>
@@ -258,4 +252,5 @@ const Category = () => {
     </>
   );
 };
-export default Category;
+
+export default SubCategory;

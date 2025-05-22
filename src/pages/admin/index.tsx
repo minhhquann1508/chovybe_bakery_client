@@ -7,6 +7,7 @@ import Order from "./Order";
 import Review from "./Review";
 import Banner from "./Banner";
 import Blog from "./Blog";
+import SubCategory from "./SubCategory";
 
 export {
   Dashboard,
@@ -18,4 +19,5 @@ export {
   Review,
   Banner,
   Blog,
+  SubCategory,
 };
